@@ -19,6 +19,79 @@ All servers are deployed on AWS EC2 instances. The benefits of using EC2 include
 - **Reliability**: High availability and redundancy options.
 - **Security**: Robust security features and compliance certifications.
 
+### Gunicorn Setup for MentalHealth App
+Gunicorn (Green Unicorn) is a Python WSGI HTTP server for UNIX. It is a pre-fork worker model, which means it forks multiple worker processes to handle requests. It is widely used in production environments due to its simplicity, performance, and compatibility with various web frameworks.
+- **Scalability**: Gunicorn can handle a large number of concurrent requests by forking multiple worker processes.
+- **Flexibility**: It supports various worker types and configurations to optimize performance based on application needs.
+- **Performance**: Efficiently uses server resources and provides a robust solution for serving Python web applications.
+- **Compatibility**: Works seamlessly with WSGI applications and integrates well with web frameworks like Django.
+
+### Request Flow
+The flow of a request in the deployed application is as follows:
+1. **Request** -> **Web Server** -> **WSGI Server** -> **WSGI-supported Web Application**
+
+#### 1. Configuration
+
+The Gunicorn server is configured to bind to all available IP addresses on port 8000. This allows Nginx, acting as a reverse proxy, to forward requests to Gunicorn.
+
+```bash
+gunicorn --bind 0.0.0.0:8000 mentalhealthapi.wsgi
+```
+
+#### 2. Running Gunicorn in the Background
+
+To ensure the server continues running even after logging out from the terminal, `nohup` is used:
+
+```bash
+nohup gunicorn --bind 0.0.0.0:8000 mentalhealthapi.wsgi &
+```
+This command runs Gunicorn in the background, ignoring hangup signals and appending output to `nohup.out`.
+
+---
+
+
+## Nginx
+
+Nginx is a web server similar to Apache, but it is known for being lightweight and efficient. It handles multiple responses simultaneously and utilizes an event-driven architecture to transfer all outputs, making it highly responsive and fast.
+
+### Key Features of Nginx
+
+- **Lightweight**: Designed to be a more efficient alternative to traditional web servers.
+- **Event-Driven**: Utilizes event listeners to manage outputs, rather than relying on a thread-per-request model.
+- **High Performance**: Capable of handling a large number of concurrent connections with minimal resource usage.
+
+### Configuration
+
+- **Location**: Nginx configuration files are typically located in the `/etc/nginx` directory.
+- **Settings**: Configuration files include settings for the number of users, performance optimizations, and other server parameters.
+
+### Example Nginx Configuration File for AWS EC2
+
+Here's an example of what an Nginx configuration file might look like:
+
+```nginx
+server {
+    listen 80;
+    server_name EC2 instance's public DNS
+
+    location / {
+        proxy_pass http://unix:/home/ubuntu/mentalhealthapp-backend/gunicorn.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Benefits
+
+- **Scalability**: Easily handles increased load by efficiently managing resources.
+- **Flexibility**: Wide range of configuration options to optimize performance based on specific needs.
+- **Reliability**: Provides fast and reliable responses, making it suitable for high-traffic applications.
+
+---
+
 ## Base URL
 
 ```
